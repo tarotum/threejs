@@ -166,11 +166,11 @@ var theta = 0;
 function animate () {
 	theta += 0.1;
 
-	particles.rotation.x += 0.002;
-	particles.rotation.y += 0.002;
+	particles.rotation.x += 0.0002;
+	particles.rotation.y += 0.0002;
 
-	camera.position.x += (mouse.x / 10 - camera.position.x) * 0.02;
-	camera.position.y += (-mouse.y / 10 - camera.position.y) * 0.02;
+	camera.position.x += (mouseX / 10 - camera.position.x) * 0.02;
+	camera.position.y += (-mouseY / 10 - camera.position.y) * 0.02;
 
 	// camera.lookAt(scene.position);
 	// camera.updateMatrixWorld();
@@ -183,13 +183,16 @@ function animate () {
 
 	if (intersects.length > 0) {
 		if (INTERSECTED !== intersects[0].object) {
-			if (INTERSECTED) INTERSECTED.material.opacity = 1;
-			// console.log(intersects[0].distance);
+			let dScale = intersects[0].object.scale;
+			if (INTERSECTED) INTERSECTED.scale = dScale;
 			INTERSECTED = intersects[0].object;
-			INTERSECTED.material.opacity = 0;
+			INTERSECTED.scale.x = INTERSECTED.scale.y = 5 + 5 * Math.random();
+			// console.log(INTERSECTED.scale);
 		}
 	} else {
-		if (INTERSECTED) INTERSECTED.material.opacity = 1;
+		if (INTERSECTED) {
+			INTERSECTED.scale.x = INTERSECTED.scale.y = 3 + 3 * Math.random();
+		}
 
 		INTERSECTED = null;
 	}
@@ -208,8 +211,8 @@ function onWindowResize () {
 function onMouseMove (event) {
 	event.preventDefault();
 
-	mouse.x = event.clientX - window.innerWidth / 2;
-	mouse.y = event.clientY - window.innerHeight / 2;
+	mouseX = event.clientX - halfX;
+	mouseY = event.clientY - halfY;
 }
 
 function onDocumentMouseMove (event) {
