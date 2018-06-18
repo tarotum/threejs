@@ -10,7 +10,7 @@ const OrbitControls = require('three-orbit-controls')(THREE);
 
 let INTERSECTED;
 
-let camera, scene, renderer, raycaster, mouse;
+let camera, scene, renderer, raycaster, mouse, controls;
 let particles;
 
 let mouseX = 0;
@@ -112,7 +112,8 @@ function init () {
 	camera.lookAt(new THREE.Vector3());
 
 	scene = new THREE.Scene();
-	scene.background = new THREE.CanvasTexture(getCanvasBg());
+	// scene.background = new THREE.CanvasTexture(getCanvasBg());
+	scene.background = new THREE.Color('#000');
 
 	renderer = new THREE.WebGLRenderer();
 	renderer.setPixelRatio(window.devicePixelRatio);
@@ -166,8 +167,8 @@ var theta = 0;
 function animate () {
 	theta += 0.1;
 
-	particles.rotation.x += 0.0002;
-	particles.rotation.y += 0.0002;
+	particles.rotation.x += 0.0009;
+	particles.rotation.y += 0.0009;
 
 	camera.position.x += (mouseX / 10 - camera.position.x) * 0.02;
 	camera.position.y += (-mouseY / 10 - camera.position.y) * 0.02;

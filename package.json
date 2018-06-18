@@ -6,6 +6,7 @@
     "start": "cross-env NODE_ENV=development webpack-dev-server --config dev.config.js  --color --open --mode development --env.development",
     "build": "cross-env NODE_ENV=production webpack --config prod.config.js --progress --hide-modules --mode production --env.production",
     "serv": "static build",
+    "deploy": "git checkout master && git subtree split --prefix build -b bp && git push -f bp bp:master && git branch -D bp && rm -r build",
     "tunnel": "gulp tunnel"
   },
   "browserslist": [
