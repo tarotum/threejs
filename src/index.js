@@ -211,8 +211,8 @@ function onWindowResize () {
 }
 
 function onTouchMove (event) {
-	mouseX = event.changedTouches[0].clientX - halfX;
-	mouseY = event.changedTouches[0].clientY - halfY;
+	mouseX = event.touches[0].pageX * 15;
+	mouseY = event.touches[0].pageY * 15;
 }
 
 function onMouseMove (event) {
