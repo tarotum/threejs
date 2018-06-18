@@ -158,6 +158,7 @@ function init () {
 	mouse = new THREE.Vector2();
 	document.addEventListener('mousemove', onDocumentMouseMove, false);
 	document.addEventListener('mousemove', onMouseMove, false);
+	document.addEventListener('touchmove', onTouchMove, false);
 	window.addEventListener('resize', onWindowResize, false);
 }
 
@@ -207,6 +208,11 @@ function onWindowResize () {
 	camera.updateProjectionMatrix();
 
 	renderer.setSize(window.innerWidth, window.innerHeight);
+}
+
+function onTouchMove (event) {
+	mouseX = event.changedTouches[0].clientX - halfX;
+	mouseY = event.changedTouches[0].clientY - halfY;
 }
 
 function onMouseMove (event) {
