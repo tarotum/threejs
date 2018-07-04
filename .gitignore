@@ -4,3 +4,5 @@ yarn-error.log
 /**/*.fbx
 /**/*.obj
 /**/*.spp
+
+!/build/*.fbx

@@ -2,16 +2,23 @@
 
 import './index.scss';
 
+import FBXLoader from 'three-fbx-loader';
 import * as THREE from 'three';
-
 import Detector from 'three/examples/js/Detector';
+import model from 'Static/sort_logo.fbx';
 
-const OrbitControls = require('three-orbit-controls')(THREE);
+import color from 'Static/texture/color.png';
+import normal from 'Static/texture/normal.png';
+import roughness from 'Static/texture/roughness.png';
+// import ao from 'Static/texture/vp_Mixed_AO.png';
+import metalness from 'Static/texture/metallic.png';
 
-let INTERSECTED;
+// const OrbitControls = require('three-orbit-controls')(THREE);
 
 let camera, scene, renderer, raycaster, mouse, controls;
 let particles;
+
+var cubeCamera;
 
 let mouseX = 0;
 let mouseY = 0;
@@ -45,7 +52,7 @@ function getCoords (delta) {
 	}
 }
 
-function getCanvas () {
+function getCanvas (spec) {
 	let canvas = document.createElement('canvas');
 	let ctx = canvas.getContext('2d');
 
@@ -67,7 +74,7 @@ function getCanvas () {
 	canvas.width = 32;
 	canvas.height = 32;
 
-	switch (getRandomInt(0, 3)) {
+	switch (getRandomInt(0, spec)) {
 	case 0:
 		ctx.fillStyle = gradientWhite;
 		break;
@@ -106,101 +113,118 @@ function getCanvasBg () {
 
 function init () {
 	camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.5, 3000);
-	// camera.position.z = 1;
 	camera.position.set(0, 0, 200);
-
 	camera.lookAt(new THREE.Vector3());
 
 	scene = new THREE.Scene();
-	// scene.background = new THREE.CanvasTexture(getCanvasBg());
-	scene.background = new THREE.Color('#000');
+	scene.background = new THREE.CanvasTexture(getCanvasBg());
+	// scene.background = new THREE.Color('#000');
 
-	renderer = new THREE.WebGLRenderer();
+	cubeCamera = new THREE.CubeCamera(70, 5000, 1024);
+	scene.add(cubeCamera);
+	// console.log(cubeCamera);
+	const ambientLingt = new THREE.AmbientLight('blue', 0.5);
+	scene.add(ambientLingt);
+
+	const hemiLight = new THREE.HemisphereLight(0xffffff, 0xffffff, 50);
+	hemiLight.color.setHSL(0.6, 1, 0.6);
+	hemiLight.groundColor.setHSL(0.095, 1, 0.75);
+	hemiLight.position.set(0, 5, -30);
+	// scene.add(hemiLight);
+
+	const textureLoader = new THREE.TextureLoader();
+
+	const map = textureLoader.load(color);
+	// const aoMap = textureLoader.load(ao);
+	const normalMap = textureLoader.load(normal);
+	const roughnessMap = textureLoader.load(roughness);
+	const metalnessMap = textureLoader.load(metalness);
+
+	var material = new THREE.MeshStandardMaterial({
+		// map,
+		normalMap,
+		// roughnessMap,
+		// metalnessMap,
+		envMap: cubeCamera.renderTarget.texture,
+		roughness: 0.1,
+		metalness: 0.7,
+		color: 0x909090
+	});
+
+	// model
+	var modelLoader = new FBXLoader();
+	modelLoader.load(model, function (object3d) {
+		object3d.scale.set(25, 25, 25);
+		object3d.position.y = -50;
+		object3d.position.z = -100;
+		object3d.children[0].material = material;
+		scene.add(object3d);
+	});
+
+	var light = new THREE.DirectionalLight(0xefefff, 3);
+	light.position.set(1, -1.5, 1).normalize();
+	light.scale.set(10, 10, 10);
+	// scene.add(light);
+	var light2 = new THREE.DirectionalLight(0xffefef, 1.5);
+	light2.position.set(-1, -1, -1).normalize();
+	// scene.add(light2);
+
+	var helper = new THREE.DirectionalLightHelper(light, 5);
+	// scene.add(helper);
+
+	renderer = new THREE.WebGLRenderer({
+		antialias: true
+	});
 	renderer.setPixelRatio(window.devicePixelRatio);
 	renderer.setSize(window.innerWidth, window.innerHeight);
 	document.body.appendChild(renderer.domElement);
-
 	// controls = new OrbitControls(camera, renderer.domElement);
 
-	// let materials = new THREE.SpriteMaterial({
-	// 	map: new THREE.CanvasTexture(getCanvas())
-	// });
+	// particles
 	particles = new THREE.Group();
 	scene.add(particles);
-
 	for (let i = 0; i < 1000; i++) {
 		let particle = new THREE.Sprite(
 			new THREE.SpriteMaterial({
-				map: new THREE.CanvasTexture(getCanvas())
+				map: new THREE.CanvasTexture(getCanvas(1))
 			})
 		);
-
 		particle.position.x = (2 * Math.random() - 1) * 1000;
 		particle.position.y = (2 * Math.random() - 1) * 1000;
 		particle.position.z = (2 * Math.random() - 1) * 1000;
-
 		if (
 			((particle.position.y > 0 && particle.position.y < 500) ||
-        (particle.position.y < 0 && particle.position.y > -500)) &&
-      ((particle.position.x > 0 && particle.position.x < 500) ||
-        (particle.position.x < 0 && particle.position.x > -500))
+				(particle.position.y < 0 && particle.position.y > -500)) &&
+			((particle.position.x > 0 && particle.position.x < 500) ||
+				(particle.position.x < 0 && particle.position.x > -500))
 		) {
 			particle.position.z = getCoords(1000);
 		}
-
-		// console.log(particle.position.x, particle.position.y, particle.position.z);
-
 		particle.scale.x = particle.scale.y = 3 + 3 * Math.random();
-
 		particles.add(particle);
 	}
+
 	raycaster = new THREE.Raycaster();
 	mouse = new THREE.Vector2();
-	document.addEventListener('mousemove', onDocumentMouseMove, false);
+	// document.addEventListener('mousemove', onDocumentMouseMove, false);
 	document.addEventListener('mousemove', onMouseMove, false);
-	document.addEventListener('touchmove', onTouchMove, false);
 	window.addEventListener('resize', onWindowResize, false);
 }
 
-var radius = 200;
-var theta = 0;
-
 function animate () {
-	theta += 0.1;
+	// if (scene.children[3] !== undefined) scene.children[3].rotation.y = Date.now() * 0.002;
+	// particles.rotation.x += 0.0009;
+	particles.rotation.z += 0.0009;
 
-	particles.rotation.x += 0.0009;
-	particles.rotation.y += 0.0009;
+	camera.position.x += (mouseX / 20 - camera.position.x) * 0.02;
+	camera.position.y += (-mouseY / 20 - camera.position.y) * 0.02;
 
-	camera.position.x += (mouseX / 10 - camera.position.x) * 0.02;
-	camera.position.y += (-mouseY / 10 - camera.position.y) * 0.02;
-
-	// camera.lookAt(scene.position);
-	// camera.updateMatrixWorld();
-
-	// find intersections
-
-	raycaster.setFromCamera(mouse, camera);
-
-	var intersects = raycaster.intersectObjects(scene.children[0].children);
-
-	if (intersects.length > 0) {
-		if (INTERSECTED !== intersects[0].object) {
-			let dScale = intersects[0].object.scale;
-			if (INTERSECTED) INTERSECTED.scale = dScale;
-			INTERSECTED = intersects[0].object;
-			INTERSECTED.scale.x = INTERSECTED.scale.y = 5 + 5 * Math.random();
-			// console.log(INTERSECTED.scale);
-		}
-	} else {
-		if (INTERSECTED) {
-			INTERSECTED.scale.x = INTERSECTED.scale.y = 3 + 3 * Math.random();
-		}
-
-		INTERSECTED = null;
-	}
-
+	camera.lookAt(scene.position);
+	camera.updateMatrixWorld();
 	requestAnimationFrame(animate);
+
 	renderer.render(scene, camera);
+	cubeCamera.update(renderer, scene);
 }
 
 function onWindowResize () {
@@ -210,21 +234,8 @@ function onWindowResize () {
 	renderer.setSize(window.innerWidth, window.innerHeight);
 }
 
-function onTouchMove (event) {
-	mouseX = event.touches[0].pageX * 15;
-	mouseY = event.touches[0].pageY * 15;
-}
-
 function onMouseMove (event) {
 	event.preventDefault();
-
 	mouseX = event.clientX - halfX;
 	mouseY = event.clientY - halfY;
-}
-
-function onDocumentMouseMove (event) {
-	event.preventDefault();
-
-	mouse.x = event.clientX / window.innerWidth * 2 - 1;
-	mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
 }
