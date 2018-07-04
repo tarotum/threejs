@@ -10,15 +10,14 @@ import model from 'Static/sort_logo.fbx';
 import color from 'Static/texture/color.png';
 import normal from 'Static/texture/normal.png';
 import roughness from 'Static/texture/roughness.png';
-// import ao from 'Static/texture/vp_Mixed_AO.png';
 import metalness from 'Static/texture/metallic.png';
 
-// const OrbitControls = require('three-orbit-controls')(THREE);
+const OrbitControls = require('three-orbit-controls')(THREE);
 
-let camera, scene, renderer, raycaster, mouse, controls;
+let camera, scene, renderer, mouse, controls;
 let particles;
 
-var cubeCamera;
+var cubeCamera, vpModel;
 
 let mouseX = 0;
 let mouseY = 0;
@@ -120,11 +119,11 @@ function init () {
 	scene.background = new THREE.CanvasTexture(getCanvasBg());
 	// scene.background = new THREE.Color('#000');
 
-	cubeCamera = new THREE.CubeCamera(70, 5000, 1024);
+	cubeCamera = new THREE.CubeCamera(1, 3000, 512);
 	scene.add(cubeCamera);
 	// console.log(cubeCamera);
-	const ambientLingt = new THREE.AmbientLight('blue', 0.5);
-	scene.add(ambientLingt);
+	const ambientLingt = new THREE.AmbientLight(0xffffff, 0.5);
+	// scene.add(ambientLingt);
 
 	const hemiLight = new THREE.HemisphereLight(0xffffff, 0xffffff, 50);
 	hemiLight.color.setHSL(0.6, 1, 0.6);
@@ -143,38 +142,34 @@ function init () {
 	var material = new THREE.MeshStandardMaterial({
 		// map,
 		normalMap,
-		// roughnessMap,
+		roughnessMap,
 		// metalnessMap,
 		envMap: cubeCamera.renderTarget.texture,
 		roughness: 0.1,
 		metalness: 0.7,
-		color: 0x909090
+		color: 0xffffff
 	});
 
 	// model
 	var modelLoader = new FBXLoader();
 	modelLoader.load(model, function (object3d) {
+		vpModel = object3d;
 		object3d.scale.set(25, 25, 25);
 		object3d.position.y = -50;
-		object3d.position.z = -100;
+		object3d.position.z = -120;
 		object3d.children[0].material = material;
 		scene.add(object3d);
 	});
 
-	var light = new THREE.DirectionalLight(0xefefff, 3);
+	var light = new THREE.DirectionalLight('blue', 0.4);
 	light.position.set(1, -1.5, 1).normalize();
 	light.scale.set(10, 10, 10);
-	// scene.add(light);
+	scene.add(light);
 	var light2 = new THREE.DirectionalLight(0xffefef, 1.5);
 	light2.position.set(-1, -1, -1).normalize();
 	// scene.add(light2);
 
-	var helper = new THREE.DirectionalLightHelper(light, 5);
-	// scene.add(helper);
-
-	renderer = new THREE.WebGLRenderer({
-		antialias: true
-	});
+	renderer = new THREE.WebGLRenderer();
 	renderer.setPixelRatio(window.devicePixelRatio);
 	renderer.setSize(window.innerWidth, window.innerHeight);
 	document.body.appendChild(renderer.domElement);
@@ -204,17 +199,14 @@ function init () {
 		particles.add(particle);
 	}
 
-	raycaster = new THREE.Raycaster();
-	mouse = new THREE.Vector2();
 	// document.addEventListener('mousemove', onDocumentMouseMove, false);
 	document.addEventListener('mousemove', onMouseMove, false);
 	window.addEventListener('resize', onWindowResize, false);
 }
 
 function animate () {
-	// if (scene.children[3] !== undefined) scene.children[3].rotation.y = Date.now() * 0.002;
 	// particles.rotation.x += 0.0009;
-	particles.rotation.z += 0.0009;
+	particles.rotation.z = Date.now() * 0.00005;
 
 	camera.position.x += (mouseX / 20 - camera.position.x) * 0.02;
 	camera.position.y += (-mouseY / 20 - camera.position.y) * 0.02;
@@ -222,9 +214,18 @@ function animate () {
 	camera.lookAt(scene.position);
 	camera.updateMatrixWorld();
 	requestAnimationFrame(animate);
-
 	renderer.render(scene, camera);
-	cubeCamera.update(renderer, scene);
+
+	var updateCubemap = true;
+	if (vpModel !== undefined) {
+		if (updateCubemap) {
+			vpModel.visible = false;
+			cubeCamera.position.copy(vpModel.position);
+			renderer.autoClear = true;
+			cubeCamera.update(renderer, scene);
+			vpModel.visible = true;
+		}
+	}
 }
 
 function onWindowResize () {
